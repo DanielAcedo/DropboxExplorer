@@ -2,6 +2,7 @@ package com.example.daniel.dropboxexplorer.adapter;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +16,7 @@ import com.dropbox.core.v2.files.Metadata;
 import com.example.daniel.dropboxexplorer.R;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -23,13 +25,54 @@ import java.util.List;
 
 public class DropboxAdapter extends ArrayAdapter<Metadata> {
 
+    private List<Metadata> metadataList;
+
     public DropboxAdapter(Context context, List<Metadata> metadatas){
-        super(context, R.layout.metadata_layout, new ArrayList<Metadata>(metadatas));
+        super(context, R.layout.metadata_layout);
+        this.metadataList = new ArrayList<Metadata>(metadatas);
+        put(0, new FolderMetadata("...","1"));
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public void add(Metadata object) {
+        metadataList.add(object);
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public int getCount() {
+        return metadataList.size();
+    }
+
+    @Nullable
+    @Override
+    public Metadata getItem(int position) {
+        return metadataList.get(position);
+    }
+
+    public void put(int position, Metadata object){
+        metadataList.add(position, object);
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public void addAll(Collection<? extends Metadata> collection) {
+        metadataList.addAll(collection);
+        notifyDataSetChanged();
+    }
+
+    @Override
+    public void remove(Metadata object) {
+        metadataList.remove(object);
+        notifyDataSetChanged();
     }
 
     public void resetList(List<Metadata> metadatas){
-        clear();
-        addAll(metadatas);
+        metadataList.clear();
+        metadataList.addAll(metadatas);
+        put(0, new FolderMetadata("...","1"));
+        notifyDataSetChanged();
     }
 
     @NonNull

@@ -18,11 +18,23 @@ public class ViewPagerAdapter extends FragmentStatePagerAdapter {
 
     @Override
     public Fragment getItem(int position) {
-        return new DropboxListFragment();
+        Fragment fragment = null;
+
+        switch (position){
+            case 0:
+                fragment = new DropboxListFragment();
+                break;
+            case 1:
+                fragment = new DropboxListFragment();
+                break;
+        }
+
+
+        return fragment;
     }
 
     @Override
     public int getCount() {
-        return 1;
+        return 2;
     }
 }

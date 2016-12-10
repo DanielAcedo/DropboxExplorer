@@ -23,15 +23,18 @@ public class HomeActivity extends AppCompatActivity {
 
         toolbar = (Toolbar)findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        viewPager = (ViewPager)findViewById(R.id.viewpager);
-        adapter = new ViewPagerAdapter(getSupportFragmentManager());
-
-        viewPager.setAdapter(adapter);
 
         tabLayout = (TabLayout)findViewById(R.id.tablayout);
-        tabLayout.addTab(tabLayout.newTab().setText("Dropbox"));
+        viewPager = (ViewPager)findViewById(R.id.viewpager);
+        adapter = new ViewPagerAdapter(getSupportFragmentManager());
+        viewPager.setAdapter(adapter);
 
-        tabLayout.setupWithViewPager(viewPager);
+        tabLayout.setupWithViewPager(viewPager, true);
+
+        tabLayout.removeAllTabs();
+        tabLayout.addTab(tabLayout.newTab().setText("Local"), 0);
+        tabLayout.addTab(tabLayout.newTab().setText("Dropbox"), 1);
+        viewPager.setPageTransformer(true, new FlipPageViewTransformer());
     }
 
 }
