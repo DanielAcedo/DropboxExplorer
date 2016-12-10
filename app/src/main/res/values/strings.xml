@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">DropboxExplorer</string>
+    <string name="app_key">tc4t265ms9prup1</string>
+
+    <!-- AuthActivity -->
+    <string name="txv_authTitle">Identificate con Dropbox</string>
+</resources>
