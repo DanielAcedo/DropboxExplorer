@@ -1,5 +1,6 @@
 package com.example.daniel.dropboxexplorer;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
@@ -21,6 +22,7 @@ import com.example.daniel.dropboxexplorer.Dropbox.Client;
 import com.example.daniel.dropboxexplorer.Dropbox.DropBoxFileHelper;
 import com.example.daniel.dropboxexplorer.adapter.DropboxAdapter;
 
+import java.io.File;
 import java.util.List;
 import java.util.Stack;
 
@@ -30,12 +32,31 @@ import java.util.Stack;
 
 public class DropboxListFragment extends Fragment {
 
+    public interface DropboxListListener {
+        void onDownload();
+
+        File getCurrentLocalFile();
+    }
+
     private ListView lv_dropbox;
     private DropboxAdapter adapter;
+
+    DropboxListListener listener;
 
     private Stack<String> directoryStack;
 
     private String currentPath;
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+
+        try{
+            listener = (DropboxListListener) activity;
+        }catch (ClassCastException e){
+            throw new ClassCastException(activity.toString()+" debe implementar DropboxListListener");
+        }
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -58,6 +79,7 @@ public class DropboxListFragment extends Fragment {
             public void onItemClick(final AdapterView<?> adapterView, View view, int i, long l) {
                 final Metadata metadata = adapter.getItem(i);
 
+                //If it's the first element, go back to last folder.
                 if(i == 0){
                     if(!directoryStack.isEmpty()){
                         final ProgressDialog dialog = new ProgressDialog(getContext());
@@ -74,10 +96,11 @@ public class DropboxListFragment extends Fragment {
                         });
                     }
                 }else{
-                    //If it's a file, download
+                    //If it's a file, listener
                     if(metadata instanceof FileMetadata){
                         long size = ((FileMetadata)metadata).getSize();
 
+                        //If it's larger than 1MB, show a confirmation dialog
                         if(size > 1024*1024){
 
                             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
@@ -120,6 +143,7 @@ public class DropboxListFragment extends Fragment {
             }
         });
 
+        //Load root directory
         DropBoxFileHelper.getFiles(Client.getClient(AuthHelper.getAccessToken()), "", new DropBoxFileHelper.GetFilesTaskCallback(){
             @Override
             public void onFinish(List<Metadata> metadatas, String lastPath) {
@@ -132,16 +156,21 @@ public class DropboxListFragment extends Fragment {
         return rootView;
     }
 
+    /**
+     * Downloads a file in Dropbox based on the path
+     * @param metaPath Path on the file in Dropbox
+     */
     private void downloadFile(String metaPath){
         final ProgressDialog dialog = new ProgressDialog(getContext());
         dialog.setTitle("Descargando...");
         dialog.show();
 
-        DropBoxFileHelper.downloadFile(Client.getClient(AuthHelper.getAccessToken()), metaPath, new DropBoxFileHelper.DownloadFileTaskCallback() {
+        DropBoxFileHelper.downloadFile(Client.getClient(AuthHelper.getAccessToken()), metaPath, listener.getCurrentLocalFile(), new DropBoxFileHelper.DownloadFileTaskCallback() {
             @Override
             public void onSuccess(String filename) {
                 dialog.dismiss();
                 Toast.makeText(getContext(), "Exito al descargar fichero: "+filename, Toast.LENGTH_SHORT).show();
+                listener.onDownload();
             }
 
             @Override
@@ -150,5 +179,20 @@ public class DropboxListFragment extends Fragment {
                 Toast.makeText(getContext(), "Error al descargar fichero: " + message, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    public void refresh(){
+        DropBoxFileHelper.getFiles(Client.getClient(AuthHelper.getAccessToken()), currentPath, new DropBoxFileHelper.GetFilesTaskCallback() {
+            @Override
+            public void onFinish(List<Metadata> metadatas, String lastPath) {
+                directoryStack.push(currentPath);
+                currentPath = lastPath;
+                adapter.resetList(metadatas);
+            }
+        });
+    }
+
+    public String getCurrentPath(){
+        return currentPath;
     }
 }

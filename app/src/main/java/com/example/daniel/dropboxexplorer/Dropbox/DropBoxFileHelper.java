@@ -36,8 +36,8 @@ public class DropBoxFileHelper {
         new getFilesTask(client, path, callback).execute();
     }
 
-    public static void downloadFile(DbxClientV2 client, String path, DownloadFileTaskCallback callback){
-        new downloadFile(client, path, callback).execute();
+    public static void downloadFile(DbxClientV2 client, String path, File to, DownloadFileTaskCallback callback){
+        new downloadFile(client, path, to, callback).execute();
     }
 
     private static class getFilesTask extends AsyncTask<String, List<Metadata>, List<Metadata>>{
@@ -80,13 +80,15 @@ public class DropBoxFileHelper {
         private DownloadFileTaskCallback callback;
         private String path;
         private DbxClientV2 client;
+        private File to;
         private String resultPath;
         private String errorMessage;
 
-        public downloadFile(DbxClientV2 client, String path, DownloadFileTaskCallback callback){
+        public downloadFile(DbxClientV2 client, String path, File to, DownloadFileTaskCallback callback){
             this.path = path;
             this.client = client;
             this.callback = callback;
+            this.to = to;
         }
 
         @Override
@@ -95,7 +97,7 @@ public class DropBoxFileHelper {
 
             try {
                 String filename = client.files().getMetadata(path).getName();
-                File file = new File(Environment.getExternalStorageDirectory(), filename);
+                File file = new File(to, filename);
                 DbxDownloader downloader = client.files().download(path);
                 downloader.download(new FileOutputStream(file));
                 downloader.close();
