@@ -68,6 +68,6 @@ public class HomeActivity extends AppCompatActivity implements DropboxListFragme
 
     @Override
     public String getCurrentDropboxPath() {
-        return getCurrentDropboxPath();
+        return dropboxListFragment.getCurrentPath();
     }
 }

@@ -1,7 +1,6 @@
 package com.example.daniel.dropboxexplorer.Dropbox;
 
 import android.os.AsyncTask;
-import android.os.Environment;
 
 import com.dropbox.core.DbxDownloader;
 import com.dropbox.core.DbxException;
@@ -10,6 +9,7 @@ import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.v2.files.Metadata;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -32,12 +32,22 @@ public class DropBoxFileHelper {
         void onError(String message);
     }
 
+    public interface UploadFileTaskCallback{
+        void onSuccess(String filename);
+
+        void onError(String message);
+    }
+
     public static void getFiles(DbxClientV2 client, String path, GetFilesTaskCallback callback){
         new getFilesTask(client, path, callback).execute();
     }
 
     public static void downloadFile(DbxClientV2 client, String path, File to, DownloadFileTaskCallback callback){
         new downloadFile(client, path, to, callback).execute();
+    }
+
+    public static void uploadFile(DbxClientV2 client, String targetPath, File file, UploadFileTaskCallback callback){
+        new uploadFile(client, targetPath, file, callback).execute();
     }
 
     private static class getFilesTask extends AsyncTask<String, List<Metadata>, List<Metadata>>{
@@ -102,6 +112,56 @@ public class DropBoxFileHelper {
                 downloader.download(new FileOutputStream(file));
                 downloader.close();
                 resultPath = file.getPath();
+                ok = true;
+
+            } catch (DbxException e) {
+                e.printStackTrace();
+                errorMessage = e.getMessage();
+                ok = false;
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                errorMessage = e.getMessage();
+                ok = false;
+            } catch (IOException e) {
+                e.printStackTrace();
+                errorMessage = e.getMessage();
+                ok = false;
+            }
+
+            return ok;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean ok) {
+            if(ok){
+                callback.onSuccess(resultPath);
+            }else{
+                callback.onError(errorMessage);
+            }
+        }
+    }
+
+    private static class uploadFile extends AsyncTask<String, Boolean, Boolean>{
+        private UploadFileTaskCallback callback;
+        private String targetPath;
+        private DbxClientV2 client;
+        private File file;
+        private String resultPath;
+        private String errorMessage;
+
+        public uploadFile(DbxClientV2 client, String targetPath, File file, UploadFileTaskCallback callback){
+            this.targetPath = targetPath;
+            this.client = client;
+            this.callback = callback;
+            this.file = file;
+        }
+
+        @Override
+        protected Boolean doInBackground(String... strings) {
+            boolean ok = false;
+
+            try {
+                resultPath = client.files().upload(targetPath+"/"+file.getName()).uploadAndFinish(new FileInputStream(file)).getPathLower();
                 ok = true;
 
             } catch (DbxException e) {

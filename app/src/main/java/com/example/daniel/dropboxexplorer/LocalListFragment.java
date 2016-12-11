@@ -73,7 +73,7 @@ public class LocalListFragment extends Fragment {
         lv_local = (ListView)rootView.findViewById(R.id.lv_dropbox);
         lv_local.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onItemClick(final AdapterView<?> adapterView, View view, int i, long l) {
+            public void onItemClick(final AdapterView<?> adapterView, View view, int i, final long l) {
                 final File file = adapter.getItem(i);
 
                 //If it's the first element, go back to last folder.
@@ -83,7 +83,7 @@ public class LocalListFragment extends Fragment {
                         adapter.resetList(Arrays.asList(currentFile.listFiles()));
                     }
                 }else{
-                    //If it's a file, listener
+                    //If it's a file, upload it
                     if(file.isFile()){
                         long size = file.length();
 
@@ -91,11 +91,11 @@ public class LocalListFragment extends Fragment {
                         if(size > 1024*1024){
 
                             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                            builder.setMessage("El archivo pesa " +size/1024L/1024L+"MB. ¿Estás seguro de descargarlo?")
+                            builder.setMessage("El archivo pesa " +size/1024L/1024L+"MB. ¿Estás seguro de subirlo?")
                                     .setPositiveButton("Sí", new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialogInterface, int i) {
-                                            //UPLOAD
+                                            uploadFile(file);
                                         }
                                     }).setNegativeButton("No", new DialogInterface.OnClickListener() {
                                 @Override
@@ -105,7 +105,7 @@ public class LocalListFragment extends Fragment {
                             }).show();
 
                         }else{
-                            //UPLOAD
+                            uploadFile(file);
                         }
 
                     }
@@ -127,6 +127,26 @@ public class LocalListFragment extends Fragment {
         return rootView;
     }
 
+    private void uploadFile(File file){
+        final ProgressDialog dialog = new ProgressDialog(getContext());
+        dialog.setTitle("Subiendo...");
+        dialog.show();
+
+        DropBoxFileHelper.uploadFile(Client.getClient(AuthHelper.getAccessToken()), listener.getCurrentDropboxPath(), file, new DropBoxFileHelper.UploadFileTaskCallback() {
+            @Override
+            public void onSuccess(String filename) {
+                dialog.dismiss();
+                listener.onUpload();
+                Toast.makeText(getContext(), "Exito al subir fichero: "+filename, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(String message) {
+                dialog.dismiss();
+                Toast.makeText(getContext(), "Error al subir: "+message, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
 
     public File getCurrentFile(){
         return currentFile;
